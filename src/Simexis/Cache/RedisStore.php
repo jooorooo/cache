@@ -119,6 +119,11 @@ class RedisStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
+        if($key == '*') {
+            $this->flush();
+            return true;
+        }
+
         $pattern = $this->getPrefixWithLocale() . $key;
         $check = true;
         $keys = $this->connection()->keys($pattern);

@@ -32,7 +32,7 @@ class XCacheStore extends TaggableStore implements Store
      */
     public function get($key)
     {
-        $value = xcache_get($this->prefix.$key);
+        $value = xcache_get($this->getPrefixWithLocale().$key);
 
         if (isset($value)) {
             return $value;
@@ -49,7 +49,7 @@ class XCacheStore extends TaggableStore implements Store
      */
     public function put($key, $value, $minutes)
     {
-        xcache_set($this->prefix.$key, $value, $minutes * 60);
+        xcache_set($this->getPrefixWithLocale().$key, $value, $minutes * 60);
     }
 
     /**
@@ -61,7 +61,7 @@ class XCacheStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
-        return xcache_inc($this->prefix.$key, $value);
+        return xcache_inc($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -73,7 +73,7 @@ class XCacheStore extends TaggableStore implements Store
      */
     public function decrement($key, $value = 1)
     {
-        return xcache_dec($this->prefix.$key, $value);
+        return xcache_dec($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -96,7 +96,11 @@ class XCacheStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        return xcache_unset($this->prefix.$key);
+        $pattern = $this->getPrefixWithLocale().$key;
+        if(strpos($pattern, '*') === false)
+            return xcache_unset($this->getPrefixWithLocale().$key);
+        list($prefix) = explode('*', $pattern);
+        return xcache_unset_by_prefix($prefix);
     }
 
     /**
@@ -117,5 +121,15 @@ class XCacheStore extends TaggableStore implements Store
     public function getPrefix()
     {
         return $this->prefix;
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

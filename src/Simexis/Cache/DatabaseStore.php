@@ -203,6 +203,11 @@ class DatabaseStore implements Store
      */
     public function forget($key)
     {
+        if($key == '*') {
+            $this->flush();
+            return true;
+        }
+
         $key = str_replace('*','%', $this->getPrefixWithLocale(true) . $key);
         $this->table()->where('key', strpos($key, '%') !== false ? 'like' : '=', $key)->delete();
 

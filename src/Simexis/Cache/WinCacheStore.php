@@ -32,7 +32,7 @@ class WinCacheStore extends TaggableStore implements Store
      */
     public function get($key)
     {
-        $value = wincache_ucache_get($this->prefix.$key);
+        $value = wincache_ucache_get($this->getPrefixWithLocale().$key);
 
         if ($value !== false) {
             return $value;
@@ -49,7 +49,7 @@ class WinCacheStore extends TaggableStore implements Store
      */
     public function put($key, $value, $minutes)
     {
-        wincache_ucache_set($this->prefix.$key, $value, $minutes * 60);
+        wincache_ucache_set($this->getPrefixWithLocale().$key, $value, $minutes * 60);
     }
 
     /**
@@ -61,7 +61,7 @@ class WinCacheStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
-        return wincache_ucache_inc($this->prefix.$key, $value);
+        return wincache_ucache_inc($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -73,7 +73,7 @@ class WinCacheStore extends TaggableStore implements Store
      */
     public function decrement($key, $value = 1)
     {
-        return wincache_ucache_dec($this->prefix.$key, $value);
+        return wincache_ucache_dec($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -96,7 +96,23 @@ class WinCacheStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        return wincache_ucache_delete($this->prefix.$key);
+        if($key == '*') {
+            $this->flush();
+            return true;
+        }
+
+        $pattern = str_replace(['\*', '*'], '.+', preg_quote($this->getPrefixWithLocale(true) . $key));
+        $check = false;
+        $all = wincache_ucache_info();
+        if(isset($all['ucache_entries']) && $all['ucache_entries']) {
+            foreach ($all['ucache_entries'] AS $cache) {
+                if (preg_match('~^' . $pattern . '$~i', $cache['key_name'])) {
+                    if (!wincache_ucache_delete($cache['key_name']))
+                        $check = false;
+                }
+            }
+        }
+        return $check;
     }
 
     /**
@@ -117,5 +133,15 @@ class WinCacheStore extends TaggableStore implements Store
     public function getPrefix()
     {
         return $this->prefix;
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

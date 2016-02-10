@@ -105,6 +105,11 @@ class ApcStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
+        if($key == '*') {
+            $this->flush();
+            return true;
+        }
+
         $pattern = str_replace(['\*', '*'], '.+', preg_quote($this->getPrefixWithLocale(true) . $key));
         $check = false;
         foreach($this->apc->cacheList() AS $cache) {
