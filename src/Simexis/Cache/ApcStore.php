@@ -30,7 +30,7 @@ class ApcStore extends TaggableStore implements Store
     public function __construct(ApcWrapper $apc, $prefix = '')
     {
         $this->apc = $apc;
-        $this->prefix = $prefix;
+        $this->prefix = rtrim($prefix, '.') . ($prefix ? '.' : '');
     }
 
     /**
@@ -41,7 +41,7 @@ class ApcStore extends TaggableStore implements Store
      */
     public function get($key)
     {
-        $value = $this->apc->get($this->prefix.$key);
+        $value = $this->apc->get($this->getPrefixWithLocale().$key);
 
         if ($value !== false) {
             return $value;
@@ -58,7 +58,7 @@ class ApcStore extends TaggableStore implements Store
      */
     public function put($key, $value, $minutes)
     {
-        $this->apc->put($this->prefix.$key, $value, $minutes * 60);
+        $this->apc->put($this->getPrefixWithLocale().$key, $value, $minutes * 60);
     }
 
     /**
@@ -70,7 +70,7 @@ class ApcStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
-        return $this->apc->increment($this->prefix.$key, $value);
+        return $this->apc->increment($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -82,7 +82,7 @@ class ApcStore extends TaggableStore implements Store
      */
     public function decrement($key, $value = 1)
     {
-        return $this->apc->decrement($this->prefix.$key, $value);
+        return $this->apc->decrement($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -105,7 +105,15 @@ class ApcStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        return $this->apc->delete($this->prefix.$key);
+        $pattern = str_replace(['\*', '*'], '.+', preg_quote($this->getPrefixWithLocale(true) . $key));
+        $check = false;
+        foreach($this->apc->cacheList() AS $cache) {
+            if(preg_match('~^' . $pattern . '$~i', $cache['info'])) {
+                if(!$this->apc->delete($cache['info']))
+                    $check = false;
+            }
+        }
+        return $check;
     }
 
     /**
@@ -126,5 +134,15 @@ class ApcStore extends TaggableStore implements Store
     public function getPrefix()
     {
         return $this->prefix;
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

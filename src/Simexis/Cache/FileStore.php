@@ -165,10 +165,21 @@ class FileStore implements Store
      */
     public function forget($key)
     {
-        $file = $this->path($key);
-
-        if ($this->files->exists($file)) {
-            return $this->files->delete($file);
+        $file = $this->path($key, true);
+        if(strpos($file, '*') !== false) {
+            $files = $this->files->glob($file);
+            if($files) {
+                $check = true;
+                foreach($files AS $file) {
+                    if(!$this->files->delete($file))
+                        $check = false;
+                }
+                return $check;
+            }
+        } else {
+            if ($this->files->exists($file)) {
+                return $this->files->delete($file);
+            }
         }
 
         return false;
@@ -194,11 +205,9 @@ class FileStore implements Store
      * @param  string  $key
      * @return string
      */
-    protected function path($key)
+    protected function path($key, $forget = false)
     {
-        $parts = array_slice(str_split($hash = md5($key), 2), 0, 2);
-
-        return $this->directory.'/'.implode('/', $parts).'/'.$hash;
+        return $this->directory . '/' . ($forget ? '*' : app()->getLocale()) .'/'. str_replace('.', '/', $key) . '.cache';
     }
 
     /**

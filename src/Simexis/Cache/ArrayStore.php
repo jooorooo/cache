@@ -21,6 +21,7 @@ class ArrayStore extends TaggableStore implements Store
      */
     public function get($key)
     {
+        $key = $this->getkeyWithLocale($key);
         if (array_key_exists($key, $this->storage)) {
             return $this->storage[$key];
         }
@@ -36,6 +37,7 @@ class ArrayStore extends TaggableStore implements Store
      */
     public function put($key, $value, $minutes)
     {
+        $key = $this->getkeyWithLocale($key);
         $this->storage[$key] = $value;
     }
 
@@ -48,6 +50,7 @@ class ArrayStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
+        $key = $this->getkeyWithLocale($key);
         $this->storage[$key] = $this->storage[$key] + $value;
 
         return $this->storage[$key];
@@ -85,8 +88,12 @@ class ArrayStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        unset($this->storage[$key]);
-
+        $pattern = str_replace(['\*', '*'], '.+', preg_quote($this->getkeyWithLocale($key, true)));
+        foreach($this->storage AS $key => $data) {
+            if(preg_match('~^' . $pattern . '$~i', $key)) {
+                unset($this->storage[$key]);
+            }
+        }
         return true;
     }
 
@@ -108,5 +115,15 @@ class ArrayStore extends TaggableStore implements Store
     public function getPrefix()
     {
         return '';
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getkeyWithLocale($key, $flush = false)
+    {
+        return ($flush ? '*' : app()->getLocale()) . '.' . $key;
     }
 }

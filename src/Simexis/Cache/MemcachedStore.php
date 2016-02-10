@@ -41,7 +41,7 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function get($key)
     {
-        $value = $this->memcached->get($this->prefix.$key);
+        $value = $this->memcached->get($this->getPrefixWithLocale().$key);
 
         if ($this->memcached->getResultCode() == 0) {
             return $value;
@@ -58,7 +58,7 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function put($key, $value, $minutes)
     {
-        $this->memcached->set($this->prefix.$key, $value, $minutes * 60);
+        $this->memcached->set($this->getPrefixWithLocale().$key, $value, $minutes * 60);
     }
 
     /**
@@ -71,7 +71,7 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function add($key, $value, $minutes)
     {
-        return $this->memcached->add($this->prefix.$key, $value, $minutes * 60);
+        return $this->memcached->add($this->getPrefixWithLocale().$key, $value, $minutes * 60);
     }
 
     /**
@@ -83,7 +83,7 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
-        return $this->memcached->increment($this->prefix.$key, $value);
+        return $this->memcached->increment($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -95,7 +95,7 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function decrement($key, $value = 1)
     {
-        return $this->memcached->decrement($this->prefix.$key, $value);
+        return $this->memcached->decrement($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -118,7 +118,19 @@ class MemcachedStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        return $this->memcached->delete($this->prefix.$key);
+        $pattern = str_replace(['\*', '*'], '.+', preg_quote($this->getPrefixWithLocale(true) . $key));
+        $check = true;
+        $all = $this->memcached->fetchAll();
+        if($all) {
+            $check = false;
+            foreach ($all AS $cache) {
+                if (preg_match('~^' . $pattern . '$~i', $cache['key'])) {
+                    if (!$this->memcached->delete($cache['key']))
+                        $check = false;
+                }
+            }
+        }
+        return $check;
     }
 
     /**
@@ -160,5 +172,15 @@ class MemcachedStore extends TaggableStore implements Store
     public function setPrefix($prefix)
     {
         $this->prefix = ! empty($prefix) ? $prefix.':' : '';
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

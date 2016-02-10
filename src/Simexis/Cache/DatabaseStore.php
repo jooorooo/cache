@@ -50,7 +50,7 @@ class DatabaseStore implements Store
     public function __construct(ConnectionInterface $connection, EncrypterContract $encrypter, $table, $prefix = '')
     {
         $this->table = $table;
-        $this->prefix = $prefix;
+        $this->prefix = rtrim($prefix, '.') . ($prefix ? '.' : '');
         $this->encrypter = $encrypter;
         $this->connection = $connection;
     }
@@ -63,7 +63,7 @@ class DatabaseStore implements Store
      */
     public function get($key)
     {
-        $prefixed = $this->prefix.$key;
+        $prefixed = $this->getPrefixWithLocale().$key;
 
         $cache = $this->table()->where('key', '=', $prefixed)->first();
 
@@ -95,7 +95,7 @@ class DatabaseStore implements Store
      */
     public function put($key, $value, $minutes)
     {
-        $key = $this->prefix.$key;
+        $key = $this->getPrefixWithLocale().$key;
 
         // All of the cached values in the database are encrypted in case this is used
         // as a session data store by the consumer. We'll also calculate the expire
@@ -150,7 +150,7 @@ class DatabaseStore implements Store
     protected function incrementOrDecrement($key, $value, Closure $callback)
     {
         return $this->connection->transaction(function () use ($key, $value, $callback) {
-            $prefixed = $this->prefix.$key;
+            $prefixed = $this->getPrefixWithLocale().$key;
 
             $cache = $this->table()->where('key', $prefixed)->lockForUpdate()->first();
 
@@ -203,7 +203,8 @@ class DatabaseStore implements Store
      */
     public function forget($key)
     {
-        $this->table()->where('key', '=', $this->prefix.$key)->delete();
+        $key = str_replace('*','%', $this->getPrefixWithLocale(true) . $key);
+        $this->table()->where('key', strpos($key, '%') !== false ? 'like' : '=', $key)->delete();
 
         return true;
     }
@@ -256,5 +257,15 @@ class DatabaseStore implements Store
     public function getPrefix()
     {
         return $this->prefix;
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

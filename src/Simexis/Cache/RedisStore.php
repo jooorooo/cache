@@ -51,7 +51,7 @@ class RedisStore extends TaggableStore implements Store
      */
     public function get($key)
     {
-        if (! is_null($value = $this->connection()->get($this->prefix.$key))) {
+        if (! is_null($value = $this->connection()->get($this->getPrefixWithLocale().$key))) {
             return is_numeric($value) ? $value : unserialize($value);
         }
     }
@@ -70,7 +70,7 @@ class RedisStore extends TaggableStore implements Store
 
         $minutes = max(1, $minutes);
 
-        $this->connection()->setex($this->prefix.$key, $minutes * 60, $value);
+        $this->connection()->setex($this->getPrefixWithLocale().$key, $minutes * 60, $value);
     }
 
     /**
@@ -82,7 +82,7 @@ class RedisStore extends TaggableStore implements Store
      */
     public function increment($key, $value = 1)
     {
-        return $this->connection()->incrby($this->prefix.$key, $value);
+        return $this->connection()->incrby($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -94,7 +94,7 @@ class RedisStore extends TaggableStore implements Store
      */
     public function decrement($key, $value = 1)
     {
-        return $this->connection()->decrby($this->prefix.$key, $value);
+        return $this->connection()->decrby($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -108,7 +108,7 @@ class RedisStore extends TaggableStore implements Store
     {
         $value = is_numeric($value) ? $value : serialize($value);
 
-        $this->connection()->set($this->prefix.$key, $value);
+        $this->connection()->set($this->getPrefixWithLocale().$key, $value);
     }
 
     /**
@@ -119,7 +119,17 @@ class RedisStore extends TaggableStore implements Store
      */
     public function forget($key)
     {
-        return (bool) $this->connection()->del($this->prefix.$key);
+        $pattern = $this->getPrefixWithLocale() . $key;
+        $check = true;
+        $keys = $this->connection()->keys($pattern);
+        if($keys) {
+            $check = false;
+            foreach($keys AS $key) {
+                if(!(bool) $this->connection()->del($pattern))
+                    $check = false;
+            }
+        }
+        return $check;
     }
 
     /**
@@ -193,5 +203,15 @@ class RedisStore extends TaggableStore implements Store
     public function setPrefix($prefix)
     {
         $this->prefix = ! empty($prefix) ? $prefix.':' : '';
+    }
+
+    /**
+     * Get the cache key prefix.
+     *
+     * @return string
+     */
+    private function getPrefixWithLocale($flush = false)
+    {
+        return $this->getPrefix() . ($flush ? '*' : app()->getLocale()) . '.';
     }
 }

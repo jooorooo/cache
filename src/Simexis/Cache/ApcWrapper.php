@@ -89,4 +89,15 @@ class ApcWrapper
     {
         $this->apcu ? apcu_clear_cache() : apc_clear_cache('user');
     }
+
+    /**
+     * Remove all items from the cache.
+     *
+     * @return void
+     */
+    public function cacheList()
+    {
+        $list = $this->apcu ? apcu_cache_info() : apc_cache_info();
+        return isset($list['cache_list']) ? $list['cache_list'] : [];
+    }
 }
