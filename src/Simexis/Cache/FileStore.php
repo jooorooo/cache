@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Contracts\Cache\Store;
+use Symfony\Component\Finder\Finder;
 
 class FileStore implements Store
 {
@@ -167,15 +168,21 @@ class FileStore implements Store
     {
         $file = $this->path($key, true);
         if(strpos($file, '*') !== false) {
-            $files = $this->files->glob($file);
-            if($files) {
-                $check = true;
-                foreach($files AS $file) {
-                    if(!$this->files->delete($file))
-                        $check = false;
-                }
-                return $check;
+            list($dir, $pattern) = explode('*', $file, 2);
+            $pattern = str_replace(['\*', '*'],'.+', preg_quote('*' . $pattern));
+            $replace = DIRECTORY_SEPARATOR == '\\' ? '\\\\' : '//';
+            $pattern = str_replace('/', $replace, $pattern);
+
+            $Directory = new \RecursiveDirectoryIterator($dir);
+            $Iterator = new \RecursiveIteratorIterator($Directory);
+            $objects  = new \RegexIterator($Iterator, '~^' . $pattern . '$~i');
+
+            $check = true;
+            foreach($objects AS $file => $object) {
+                if(!$this->files->delete($file))
+                    $check = false;
             }
+
         } else {
             if ($this->files->exists($file)) {
                 return $this->files->delete($file);
