@@ -170,8 +170,8 @@ class FileStore implements Store
         if(strpos($file, '*') !== false) {
             list($dir, $pattern) = explode('*', $file, 2);
             $pattern = str_replace(['\*', '*'],'.+', preg_quote('*' . $pattern));
-            $replace = DIRECTORY_SEPARATOR == '\\' ? '\\\\' : '//';
-            $pattern = str_replace('/', $replace, $pattern);
+            if(DIRECTORY_SEPARATOR == '\\')
+                $pattern = str_replace('/', '\\\\', $pattern);
 
             $Directory = new \RecursiveDirectoryIterator($dir);
             $Iterator = new \RecursiveIteratorIterator($Directory);
@@ -182,7 +182,7 @@ class FileStore implements Store
                 if(!$this->files->delete($file))
                     $check = false;
             }
-
+            return $check;
         } else {
             if ($this->files->exists($file)) {
                 return $this->files->delete($file);
