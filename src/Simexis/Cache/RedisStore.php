@@ -4,9 +4,11 @@ namespace Simexis\Cache;
 
 use Illuminate\Contracts\Cache\Store;
 use Illuminate\Redis\Database as Redis;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class RedisStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The Redis database connection.
      *

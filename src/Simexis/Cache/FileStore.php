@@ -7,9 +7,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Contracts\Cache\Store;
 use Symfony\Component\Finder\Finder;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class FileStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The Illuminate Filesystem instance.
      *

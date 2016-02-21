@@ -2,10 +2,13 @@
 
 namespace Simexis\Cache;
 
+use Illuminate\Cache\RetrievesMultipleKeys;
 use Illuminate\Contracts\Cache\Store;
 
 class ApcStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
+	
     /**
      * The APC wrapper instance.
      *

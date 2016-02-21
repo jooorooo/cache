@@ -2,10 +2,12 @@
 
 namespace Simexis\Cache;
 
+use Illuminate\Cache\RetrievesMultipleKeys;
 use Illuminate\Contracts\Cache\Store;
 
 class ArrayStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The array of stored values.
      *

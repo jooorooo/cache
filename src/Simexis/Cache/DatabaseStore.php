@@ -5,11 +5,13 @@ namespace Simexis\Cache;
 use Closure;
 use Exception;
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Cache\RetrievesMultipleKeys;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Contracts\Encryption\Encrypter as EncrypterContract;
 
 class DatabaseStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The database connection instance.
      *

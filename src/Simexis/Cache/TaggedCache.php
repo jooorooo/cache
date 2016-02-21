@@ -3,9 +3,11 @@
 namespace Simexis\Cache;
 
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class TaggedCache extends Repository
 {
+    use RetrievesMultipleKeys;
     /**
      * The tag set instance.
      *

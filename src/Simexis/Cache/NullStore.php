@@ -3,9 +3,11 @@
 namespace Simexis\Cache;
 
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class NullStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The array of stored values.
      *

@@ -3,9 +3,11 @@
 namespace Simexis\Cache;
 
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class MemcachedStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * The Memcached instance.
      *

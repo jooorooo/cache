@@ -3,9 +3,11 @@
 namespace Simexis\Cache;
 
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Cache\RetrievesMultipleKeys;
 
 class WinCacheStore extends TaggableStore implements Store
 {
+    use RetrievesMultipleKeys;
     /**
      * A string that should be prepended to keys.
      *
