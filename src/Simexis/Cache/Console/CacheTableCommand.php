@@ -3,7 +3,7 @@
 namespace Simexis\Cache\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Foundation\Composer;
+use Illuminate\Support\Composer;
 use Illuminate\Filesystem\Filesystem;
 
 class CacheTableCommand extends Command
